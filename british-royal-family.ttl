@@ -1,0 +1,154 @@
+## Collection of Inference Rules that describe
+## various British Royal Family Relationship Types
+
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix sp:    <http://spinrdf.org/sp#> .
+@prefix spl:    <http://spinrdf.org/spl#> .
+@prefix spin:    <http://spinrdf.org/spin#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix  rel:  <http://purl.org/vocab/relationship/> .
+@prefix wdrs: <http://www.w3.org/2007/05/powder-s#> .
+@prefix schema: <http://schema.org/> .
+
+<#RoyalPerson>
+a rdfs:Class ;
+rdfs:label "A Royal Person"^^xsd:string ;
+rdfs:subClassOf foaf:Person, schema:Person ;
+spin:rule
+          [ a sp:Construct ;
+            sp:text """
+		            ## A Royal Person must be related to Queen Elizabeth II as a Descendant, Ancestor, or Sibling
+					
+		            CONSTRUCT { ?n a ?this . } 
+					WHERE {
+		                	{ ?n rel:descendantOf+|rel:ancestorOf+|rel:siblingOf|^rel:siblingOf 									   									 <http://dbpedia.org/resource/Elizabeth_II_of_the_United_Kingdom>. 
+							}
+            			  }
+			"""
+           ] ;
+
+		  
+spin:rule
+          [ a sp:Construct ;
+            sp:text """
+			            ## Grand Parent Relationship Type
+						
+                        CONSTRUCT { ?this <http://purl.org/vocab/relationship/grandParent> ?x }
+                        WHERE {
+                                  { ?this <http://purl.org/vocab/relationship/parentOf> ?parent . 
+								    ?parent <http://purl.org/vocab/relationship/parentOf> ?x . }
+                              }
+                     """
+          ] ;
+		  
+spin:rule [ a sp:Construct ;
+            sp:text """
+					    ## Ancestor Relationship Type
+						
+                        CONSTRUCT { ?this rel:ancestorOf ?n } 
+						WHERE  {
+									{ ?this rel:parentOf+|^rel:descendantOf ?n . }
+		
+							   }
+					"""
+		  ] ;	
+		  
+spin:rule [ a sp:Construct ;
+            sp:text """
+					    ## Descendant Relationship Type
+						
+                        CONSTRUCT { ?this rel:descendantOf ?n } 
+						WHERE {
+								{ ?this ^rel:parentOf+ ?n . }		
+							  }
+				   """
+		 ] ;
+						
+spin:rule [ a sp:Construct ;
+            sp:text """
+					    ## Grand Sibling Relationship Type
+						
+                        CONSTRUCT  { ?this rel:siblingOf ?n } 
+						WHERE {
+						   	  	{ [] rel:parentOf ?this, ?n.  
+						          FILTER (?n != ?this) .
+								}
+						      }
+					"""
+		 ] ;
+		    
+spin:rule [ a sp:Construct ;
+            sp:text """
+			            ## Auntie Relationship Type
+						
+                        CONSTRUCT  { ?this <#hasAuntie> ?n } 
+					    WHERE {				 
+								 [] rel:parentOf ?n , ?prnt .
+								 ?prnt rel:parentOf ?this .
+								 FILTER (?n != ?prnt)
+								 ?n a <#FemalePerson> .
+							     
+							  }	
+					"""
+		 ] ;
+					  	
+spin:rule [ a sp:Construct ;
+            sp:text """
+					    ## Uncle Relationship Type
+						
+                        CONSTRUCT { ?this <#hasUncle> ?n } 
+					    WHERE 
+					     {
+						     [] a <#RoyalPerson> ;
+							 rel:parentOf ?this ;
+							 rel:siblingOf ?n .
+							 ?n a <#MalePerson> .
+					     }
+					  """
+		  ] ;
+		  
+spin:rule [ a sp:Construct ;
+            sp:text """
+						## Cousin Relationship Type
+						
+                        CONSTRUCT { ?this <#hasCousin> ?n } 
+					    WHERE {
+							     [] a <#RoyalPerson> ;
+								 rel:parentOf ?this ;
+								 rel:siblingOf ?n .
+								 ?n a <#MalePerson> .
+						     }
+					"""
+		 ] ;		
+spin:rule [ a sp:Construct ;
+            sp:text """
+						## Uncle Relationship Type 2 -- more specific 
+						
+                        CONSTRUCT { ?this <#hasUncle2> ?n } 
+					    WHERE 
+					     {
+						 [] rel:parentOf ?n , ?prnt .
+						     ?prnt rel:parentOf ?this .
+						     FILTER (?n != ?prnt)
+						     ?n a <#MalePerson> .
+					        
+					     }	
+					  """
+		  ] ;
+		  
+spin:rule [ a sp:Construct ;
+            sp:text """
+			            ## Cousin Relationship Type 2 -- more specific 
+						
+                        CONSTRUCT { ?this <#hasCousin2> ?n } 
+					    WHERE {
+								  [] rel:parentOf ?n_prnt, ?this_prnt .
+								  ?n_prnt rel:parentOf ?n .
+								  ?this_prnt rel:parentOf ?this .
+								   filter (?n_prnt != ?this_prnt)
+					  		 }	
+					"""
+		 ] .		
